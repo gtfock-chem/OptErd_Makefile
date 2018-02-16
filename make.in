@@ -1,0 +1,32 @@
+alignlen = 64
+offload = 0
+arch = avx
+
+CC  = icc -std=gnu99
+CXX = icpc
+FC  = ifort
+CC  = cc -std=gnu99
+CXX = CC
+FC  = ftn
+AR  = xiar rcs
+
+ifeq "${arch}" "mic"
+OPTFLAGS = -mmic -no-opt-prefetch
+else ifeq "${arch}" "avx"
+OPTFLAGS = -m64 -xAVX
+else
+OPTFLAGS = -m64 -xHost
+endif
+
+ifeq "${offload}" "1"
+ifeq "${arch}" "mic"
+$(error offload=1 can't be used with arch=mic)
+endif
+endif
+
+ifeq "${offload}" "1"
+AR = xiar -qoffload-build rcs
+OPTFLAGS += -offload-option,mic,compiler,"-z defs -no-opt-prefetch"
+else
+OPTFLAGS += -D__ERD_PROFILE__ -qno-offload
+endif
